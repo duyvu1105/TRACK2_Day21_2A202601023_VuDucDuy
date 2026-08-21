@@ -159,4 +159,4 @@ jobs:
           echo "OS Login user: ${OSLOGIN_USER}"
           ssh -i /tmp/oslogin_key -o StrictHostKeyChecking=no \
             "${OSLOGIN_USER}@${{ secrets.VM_HOST }}" \
-            "sudo systemctl restart mlops-serve && sleep 5 && curl -sf http://localhost:8000/health && echo DEPLOY_OK"
+            "sudo systemctl restart mlops-serve && for i in \$(seq 1 15); do if curl -sf http://localhost:8000/health; then echo DEPLOY_OK; exit 0; fi; sleep 3; done; echo HEALTH_CHECK_FAILED; exit 1"
