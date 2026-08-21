@@ -33,3 +33,18 @@
 
 1. **Deploy SSH lỗi xác thực**: chuyển từ SSH key thường sang OS Login kết
    hợp WIF, đăng ký key tạm của CI qua `gcloud compute os-login ssh-keys add`.
+
+## Bonus đã triển khai
+
+- **Bonus 2**: `src/train.py` hỗ trợ `random_forest`, `gradient_boosting` và
+  `logistic_regression` qua `model_type` trong `params.yaml`.
+- **Bonus 3**: mỗi lần train tạo `outputs/report.txt` với confusion matrix,
+  precision và recall theo lớp; workflow upload report cùng `metrics.json`.
+- **Bonus 4**: workflow so sánh accuracy với metrics của model đang deploy và
+  hủy cập nhật nếu model mới kém hơn.
+- **Bonus 5**: ghi phân phối nhãn vào `metrics.json`, đồng thời cảnh báo nếu
+  một lớp chiếm dưới 10% dữ liệu train.
+- **Bonus 1**: workflow đã hỗ trợ DagsHub qua ba GitHub Secrets
+  (`MLFLOW_TRACKING_URI`, `MLFLOW_TRACKING_USERNAME`,
+  `MLFLOW_TRACKING_PASSWORD`). Cần thêm secrets và có run thành công trên
+  DagsHub để hoàn tất bằng chứng.

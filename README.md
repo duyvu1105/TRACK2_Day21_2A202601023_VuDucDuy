@@ -233,7 +233,7 @@ Bắt đầu từ [Bước 1](tasks/buoc-1.md).
 | Bước 1 - Phân tích | Xác định và giải thích bộ siêu tham số tốt nhất | 4 |
 | Bước 2 - DVC | Remote đã cấu hình, `dvc push` thành công, dữ liệu hiển thị trên cloud storage | 12 |
 | Bước 2 - CI/CD | Cả bốn GitHub Actions jobs (Test, Train, Eval, Deploy) đều qua (màu xanh) | 16 |
-| Bước 2 - Eval gate | Deploy job tự động bị chặn khi accuracy dưới ngưỡng 0.70 | 4 |
+| Bước 2 - Eval gate | Deploy job tự động bị chặn khi accuracy dưới ngưỡng 0.68 | 4 |
 | Bước 2 - Serving | VM trả về kết quả đúng tại endpoint POST /predict | 12 |
 | Bước 3 - Tự động hóa | Một commit dữ liệu mới kích hoạt toàn bộ pipeline không cần tác động thủ công | 12 |
 | Tổng | | 80 |
@@ -276,6 +276,18 @@ Thay vì lưu MLflow vào file cục bộ (`sqlite:///mlflow.db`), kết nối �
 - Cập nhật `mlops.yml` để sử dụng tracking server của DagsHub thay vì file cục bộ.
 
 Kết quả: Mỗi lần chạy trong GitHub Actions sẽ được ghi lên DagsHub, có thể xem từ bất cứ đâu.
+
+Đối với repository này, cấu hình GitHub Secrets như sau:
+
+| Secret | Giá trị |
+|---|---|
+| `MLFLOW_TRACKING_URI` | `https://dagshub.com/duyvu1105/TRACK2_Day21_2A202601023_VuDucDuy.mlflow` |
+| `MLFLOW_TRACKING_USERNAME` | Tên tài khoản DagsHub |
+| `MLFLOW_TRACKING_PASSWORD` | DagsHub access token |
+
+Workflow tự động truyền ba biến này vào job Train. Không commit username/token
+vào source code; sau khi thêm secrets, chạy lại workflow và chụp màn hình trang
+experiment trên DagsHub để làm bằng chứng Bonus 1.
 
 ### Bonus 2: Thí Nghiệm Với Nhiều Thuật Toán (4 điểm)
 

@@ -2,6 +2,7 @@ import os
 import json
 import numpy as np
 import pandas as pd
+import pytest
 from src.train import train
 
 
@@ -77,3 +78,24 @@ def test_model_file_created(tmp_path):
     )
 
     assert os.path.exists("models/model.pkl")
+
+
+@pytest.mark.parametrize("model_type, model_params", [
+    ("random_forest", {"n_estimators": 10, "max_depth": 3}),
+    ("gradient_boosting", {"n_estimators": 10, "max_depth": 2}),
+    ("logistic_regression", {"C": 1.0}),
+])
+def test_supported_model_types_and_report(tmp_path, model_type, model_params):
+    train_path, eval_path = _make_temp_data(tmp_path)
+    params = {"model_type": model_type, **model_params}
+
+    accuracy = train(params, data_path=train_path, eval_path=eval_path)
+
+    assert 0.0 <= accuracy <= 1.0
+    with open("outputs/metrics.json") as metrics_file:
+        metrics = json.load(metrics_file)
+    assert metrics["model_type"] == model_type
+    assert set(metrics["label_distribution"]) == {"0", "1", "2"}
+    assert set(metrics["precision"]) == {"0", "1", "2"}
+    assert set(metrics["recall"]) == {"0", "1", "2"}
+    assert os.path.exists("outputs/report.txt")

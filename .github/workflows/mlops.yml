@@ -49,6 +49,10 @@ jobs:
     name: Train
     needs: test
     runs-on: ubuntu-latest
+    env:
+      MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
+      MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
     outputs:
       accuracy: ${{ steps.read_metrics.outputs.accuracy }}
 
@@ -75,6 +79,14 @@ jobs:
       - name: Pull data with DVC
         run: dvc pull
 
+      - name: Check MLflow tracking target
+        run: |
+          if [ -n "$MLFLOW_TRACKING_URI" ]; then
+            echo "Using remote MLflow tracking: $MLFLOW_TRACKING_URI"
+          else
+            echo "MLFLOW_TRACKING_URI is not configured; using the local MLflow default."
+          fi
+
       - name: Train model
         run: python src/train.py
 
@@ -84,14 +96,41 @@ jobs:
           ACC=$(python -c "import json; d=json.load(open('outputs/metrics.json')); print(d['accuracy'])")
           echo "accuracy=$ACC" >> "$GITHUB_OUTPUT"
 
-      - name: Upload model to Cloud Storage
-        run: gsutil cp models/model.pkl gs://${{ secrets.CLOUD_BUCKET }}/models/latest/model.pkl
+      - name: Compare with deployed model
+        run: |
+          if gsutil -q stat gs://${{ secrets.CLOUD_BUCKET }}/metrics/latest/metrics.json; then
+            gsutil cp gs://${{ secrets.CLOUD_BUCKET }}/metrics/latest/metrics.json /tmp/previous_metrics.json
+            python - <<'EOF'
+          import json
 
-      - name: Save metrics as artifact
+          with open("outputs/metrics.json") as current_file:
+              current = json.load(current_file)
+          with open("/tmp/previous_metrics.json") as previous_file:
+              previous = json.load(previous_file)
+          current_accuracy = float(current["accuracy"])
+          previous_accuracy = float(previous["accuracy"])
+          print(f"Current accuracy: {current_accuracy:.6f}")
+          print(f"Deployed accuracy: {previous_accuracy:.6f}")
+          if current_accuracy < previous_accuracy:
+              raise SystemExit("FAILED: new model is worse; deployment cancelled.")
+          print("PASSED: new model is not worse than the deployed model.")
+          EOF
+          else
+            echo "No previous metrics found; accepting the first model."
+          fi
+
+      - name: Save model metrics and report
+        run: |
+          gsutil cp models/model.pkl gs://${{ secrets.CLOUD_BUCKET }}/models/latest/model.pkl
+          gsutil cp outputs/metrics.json gs://${{ secrets.CLOUD_BUCKET }}/metrics/latest/metrics.json
+
+      - name: Save metrics and report as artifacts
         uses: actions/upload-artifact@v4
         with:
           name: metrics
-          path: outputs/metrics.json
+          path: |
+            outputs/metrics.json
+            outputs/report.txt
 
 
   # ---------------------------------------------------------------------------
