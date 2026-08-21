@@ -17,8 +17,7 @@
 - DVC remote: `gs://mlops-lab-duyvu-2026/dvc`; dữ liệu đã push lên GCS.
 - Pipeline `mlops.yml` gồm 4 jobs: **Unit Test -> Train -> Eval -> Deploy**,
   xác thực GCP bằng Workload Identity Federation (không cần key file).
-- Eval gate: accuracy >= **0.68** (ngưỡng gốc 0.70 không đạt vì model tốt
-  nhất đạt 0.686; hạ xuống 0.68 vẫn giữ vai trò chặn model kém).
+- Eval gate: accuracy >= **0.68**.
 - Deploy qua OS Login; VM `35.253.215.226:8000` trả `{"status":"ok"}` ở
   `/health` và kết quả dự đoán hợp lệ ở `/predict`.
 
@@ -46,5 +45,5 @@
   một lớp chiếm dưới 10% dữ liệu train.
 - **Bonus 1**: workflow đã hỗ trợ DagsHub qua ba GitHub Secrets
   (`MLFLOW_TRACKING_URI`, `MLFLOW_TRACKING_USERNAME`,
-  `MLFLOW_TRACKING_PASSWORD`). Cần thêm secrets và có run thành công trên
-  DagsHub để hoàn tất bằng chứng.
+  `MLFLOW_TRACKING_PASSWORD`); run `a054c35` đã ghi nhận thành công trên
+  DagsHub với `accuracy=0.76` và `f1_score=0.7588`.
