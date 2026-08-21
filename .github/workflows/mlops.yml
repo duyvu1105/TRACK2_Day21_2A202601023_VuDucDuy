@@ -81,13 +81,15 @@ jobs:
 
       - name: Check MLflow tracking target
         run: |
-          if [ -n "$MLFLOW_TRACKING_URI" ]; then
-            echo "Using remote MLflow tracking: $MLFLOW_TRACKING_URI"
-          else
-            echo "MLFLOW_TRACKING_URI is not configured; using the local MLflow default."
+          if [ -z "$MLFLOW_TRACKING_URI" ] || [ -z "$MLFLOW_TRACKING_USERNAME" ] || [ -z "$MLFLOW_TRACKING_PASSWORD" ]; then
+            echo "DagsHub MLflow secrets are incomplete."
+            exit 1
           fi
+          echo "Using remote MLflow tracking: $MLFLOW_TRACKING_URI"
 
       - name: Train model
+        env:
+          MLFLOW_EXPERIMENT_NAME: wine-quality
         run: python src/train.py
 
       - name: Read metrics

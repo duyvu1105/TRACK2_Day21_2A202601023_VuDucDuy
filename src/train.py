@@ -18,6 +18,7 @@ from sklearn.metrics import (
 EVAL_THRESHOLD = 0.68
 if os.getenv("MLFLOW_TRACKING_URI"):
     mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
+mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "wine-quality"))
 
 
 def _build_model(params: dict):
