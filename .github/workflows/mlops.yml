@@ -92,6 +92,11 @@ jobs:
           MLFLOW_EXPERIMENT_NAME: wine-quality
         run: python src/train.py
 
+      - name: Compare multiple algorithms in MLflow
+        env:
+          MLFLOW_EXPERIMENT_NAME: wine-quality
+        run: python src/compare_models.py
+
       - name: Read metrics
         id: read_metrics
         run: |
