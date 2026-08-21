@@ -97,6 +97,7 @@ jobs:
   # ---------------------------------------------------------------------------
   # JOB 3 - EVAL
   # Kiem tra nguong chat luong (accuracy >= 0.68).
+  # Nguong 0.68 duoc dung vi RandomForest tot nhat tren 2998 mau dat ~0.686.
   # Pipeline dung lai o day neu mo hinh chua dat yeu cau.
   # Chi chay khi Job 2 (Train) hoan thanh thanh cong.
   # ---------------------------------------------------------------------------
