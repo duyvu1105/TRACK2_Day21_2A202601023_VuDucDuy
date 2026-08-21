@@ -145,8 +145,18 @@ jobs:
 
       - name: Deploy via OS Login
         run: |
-          gcloud compute ssh mlops-serve \
-            --zone=us-central1-a \
+          # Tao SSH key tam cho CI
+          ssh-keygen -t ed25519 -f /tmp/oslogin_key -N "" -C "github-actions-deploy"
+          # Dang ky key vao OS Login profile cua service account
+          gcloud compute os-login ssh-keys add \
+            --key-file=/tmp/oslogin_key.pub \
             --project=project-7df9f963-9fe0-4b76-b3d \
-            --quiet \
-            --command="sudo systemctl restart mlops-serve && sleep 5 && curl -sf http://localhost:8000/health && echo DEPLOY_OK"
+            --quiet
+          # Lay username OS Login cua service account
+          OSLOGIN_USER=$(gcloud compute os-login describe-profile \
+            --project=project-7df9f963-9fe0-4b76-b3d \
+            --format='value(posixAccounts[0].username)')
+          echo "OS Login user: ${OSLOGIN_USER}"
+          ssh -i /tmp/oslogin_key -o StrictHostKeyChecking=no \
+            "${OSLOGIN_USER}@${{ secrets.VM_HOST }}" \
+            "sudo systemctl restart mlops-serve && sleep 5 && curl -sf http://localhost:8000/health && echo DEPLOY_OK"
