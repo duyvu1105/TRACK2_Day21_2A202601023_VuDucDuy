@@ -4,9 +4,10 @@ on:
   push:
     branches: [main]
     paths:
-      - 'data/**.dvc'
-      - 'src/**.py'
+      - 'data/**'
+      - 'src/**'
       - 'params.yaml'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 permissions:
@@ -130,22 +131,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: SSH deploy to VM
-        uses: appleboy/ssh-action@v1.0.3
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
         with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          script: |
-            sudo systemctl restart mlops-serve
-            sleep 5
-            for i in 1 2 3 4 5; do
-              if curl -sf http://localhost:8000/health; then
-                echo "Health check passed."
-                exit 0
-              fi
-              echo "Waiting for server... ($i)"
-              sleep 5
-            done
-            echo "Health check failed."
-            exit 1
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: mlops-lab-sa@project-7df9f963-9fe0-4b76-b3d.iam.gserviceaccount.com
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy via OS Login
+        run: |
+          gcloud compute ssh mlops-serve \
+            --zone=us-central1-a \
+            --project=project-7df9f963-9fe0-4b76-b3d \
+            --quiet \
+            --command="sudo systemctl restart mlops-serve && sleep 5 && curl -sf http://localhost:8000/health && echo DEPLOY_OK"
