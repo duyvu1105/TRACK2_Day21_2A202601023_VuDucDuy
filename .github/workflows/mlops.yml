@@ -123,8 +123,9 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # JOB 4 - DEPLOY
-  # Trien khai len VM qua SSH: restart service, cho server san sang va
-  # kiem tra /health. Chi chay khi Job 3 (Eval) hoan thanh thanh cong.
+  # Trien khai len VM qua SSH (nhu huong dan buoc-2): restart service,
+  # cho server san sang va kiem tra /health.
+  # Chi chay khi Job 3 (Eval) hoan thanh thanh cong.
   # ---------------------------------------------------------------------------
   deploy:
     name: Deploy
@@ -132,32 +133,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - uses: actions/checkout@v4
-
-      - name: Authenticate to Google Cloud
-        id: auth
-        uses: google-github-actions/auth@v2
+      - name: SSH deploy to VM
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: mlops-lab-sa@project-7df9f963-9fe0-4b76-b3d.iam.gserviceaccount.com
-
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Deploy via OS Login
-        run: |
-          # Tao SSH key tam cho CI
-          ssh-keygen -t ed25519 -f /tmp/oslogin_key -N "" -C "github-actions-deploy"
-          # Dang ky key vao OS Login profile cua service account
-          gcloud compute os-login ssh-keys add \
-            --key-file=/tmp/oslogin_key.pub \
-            --project=project-7df9f963-9fe0-4b76-b3d \
-            --quiet
-          # Lay username OS Login cua service account
-          OSLOGIN_USER=$(gcloud compute os-login describe-profile \
-            --project=project-7df9f963-9fe0-4b76-b3d \
-            --format='value(posixAccounts[0].username)')
-          echo "OS Login user: ${OSLOGIN_USER}"
-          ssh -i /tmp/oslogin_key -o StrictHostKeyChecking=no \
-            "${OSLOGIN_USER}@${{ secrets.VM_HOST }}" \
-            "sudo systemctl restart mlops-serve && for i in \$(seq 1 15); do if curl -sf http://localhost:8000/health; then echo DEPLOY_OK; exit 0; fi; sleep 3; done; echo HEALTH_CHECK_FAILED; exit 1"
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            sudo systemctl restart mlops-serve
+            for i in $(seq 1 15); do
+              if curl -sf http://localhost:8000/health; then
+                echo "DEPLOY_OK"
+                exit 0
+              fi
+              sleep 3
+            done
+            echo "HEALTH_CHECK_FAILED"
+            exit 1
